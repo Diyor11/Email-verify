@@ -8,6 +8,8 @@ router.post('/', async(req, res) => {
 
     if(error) return res.send(error.details[0].message)
 
+    console.log(value, error)
+
     const exitUser = await User.findOne({email: value.email})
     if(!exitUser){
         console.log('first one')
