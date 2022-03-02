@@ -4,19 +4,28 @@ const bcrypt = require('bcrypt')
 const nodemailer = require('nodemailer')
 const smtpTransport = require('nodemailer-smtp-transport')
 
-const transporter = nodemailer.createTransport(smtpTransport({
-    service: "Outlook365",
-    host: "smtp.office365.com",
-    port: "587",
-    tls: {
-        ciphers: "SSLv3",
-        rejectUnauthorized: false,
-    },
+// const transporter = nodemailer.createTransport(smtpTransport({
+//     host: "my.smtp.host",
+//     port: 465,
+//     secure: true,
+//     tls: {
+//         ciphers: "SSLv3",
+//         rejectUnauthorized: false,
+//     },
+//     auth: {
+//         user: 'diyorjsdeveloper@outlook.com',
+//         pass: 'diyor977382310'
+//     }
+// }))
+
+const transporter = nodemailer.createTransport({
+    host: 'smtp-mail.outlook.com',
+    port: 587,
     auth: {
         user: 'diyorjsdeveloper@outlook.com',
         pass: 'diyor977382310'
     }
-}))
+})
 
 transporter.verify((error, success) => {
     if(error){
