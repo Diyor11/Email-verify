@@ -3,46 +3,29 @@ const router = express.Router()
 const { VerifyUser, User } = require('../modules/User')
 const bcrypt = require('bcrypt')
 
-router.get('/:userId/:uniqueString', (req, res) => {
+router.get('/:userId/:uniqueString', async(req, res) => {
     const { userId, uniqueString } = req.params
 
-    VerifyUser.find({userId})
-        .then(result => {
-            if(result.length > 0){
-                if(result[0].expiresAt < Date.now()) {
-                    VerifyUser.deleteOne({userId})
-                        .then(() => {
-                            res.send('Link has expired please sign up again')
-                        })
-                        .catch(() => res.send('Clearing apired Verify user failed'))
-                    res.send(`<h1>This invalid link please re sign up</h1>`)
-                } else {
-                    const hashedString = result[0].uniqueString
+    const confirm = await VerifyUser.findOne({userId})
 
-                    bcrypt.compare(uniqueString, hashedString)
-                        .then(result => {
-                            if(result) {
-
-                                User.findByIdAndUpdate(userId, {verifield: true}, {new: true})
-                                    .then((updated) => {
-                                        VerifyUser.deleteOne({userId})
-                                            .then(() => res.send(`<h1>You success verifyed you may go home page user: ${updated.verifield}</h1>`))
-                                            .catch(() => res.send('<h3>Deleting verify user Error</h3>'))
-                                    })
-                                    .catch(() => {
-                                        res.send({error: 'User verifing error'})
-                                    })
-                            } else {
-                                res.send({error: 'Invalid verification details plsease check your inbox'})
-                            }
-                        })
-                        .catch(e => res.send({error: 'An error while comparing unique string'}))
-                }
-            } else {
-                res.send('Account don\'t exit')
-            }
-        })
-        .catch(e => res)
+    if(confirm && confirm.expiresAt < Date.now()){
+        res.send({error: 'This link expired please sign up again'})
+    }
+    else if(confirm){
+        const validLink = await bcrypt.compare(uniqueString, confirm.uniqueString)
+        if(validLink){
+            User.updateOne({_id: confirm.userId}, {verifield: true})
+                .then(d => {
+                    res.render('success', {email: confirm.email})
+                    confirm.deleteOne().catch(() => console.log('error delete verify doc'))
+                })
+                .catch(e => res.status(404).send({error: 'User not found'}))
+        } else {    
+            res.render('fail', {email: confirm.email})
+        }
+    } else {
+        res.status(404).send({error: 'Error confirm document not found'})
+    }
 })
 
 module.exports = router
